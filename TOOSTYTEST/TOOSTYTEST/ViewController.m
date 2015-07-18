@@ -18,17 +18,25 @@
     [super viewDidLoad];
 //    NSLog(@"Test");
     // Do any additional setup after loading the view, typically from a nib.
-    NSString *location = @"Chicago";
-    NSString *prefix = @"https://evening-eyrie-3304.herokuapp.com?location=";
+    
+    float lat = 41.8880980;
+    float lon = -87.6294310;
+    NSString *latStr = [NSString stringWithFormat:@"%f",lat];
+    NSString *lonStr = [NSString stringWithFormat:@"%f", lon];
+    NSString *location = [latStr stringByAppendingString:[@"&lon=" stringByAppendingString:lonStr]];
+//    (@"lat=%@&lon=%@", latStr, lonStr);
+    NSLog(@"%@",location);
+    NSString *prefix = @"https://whispering-stream-9304.herokuapp.com/distance?lat=";
     NSString *queryString = [prefix stringByAppendingString:location];
+    NSLog(@"%@",queryString);
     [NSURLConnection sendAsynchronousRequest:
       [NSURLRequest requestWithURL:
        [NSURL URLWithString:queryString]]
         queue:[NSOperationQueue mainQueue]
         completionHandler: ^(NSURLResponse *response, NSData *data, NSError *connectionError) {
                             id foo = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-                                NSLog(@"%@", foo);
-                                [self addToTextField:(NSString*)foo[@"msg"]];
+                                NSLog(@"%@",foo[@"dist_in_feet"]);
+            [self addToTextField:[NSString stringWithFormat:@"You are %@ feet from the Merch Mart", foo[@"dist_in_feet"]]];
                             }];
 }
 
