@@ -10,14 +10,83 @@
 #import "Cell.h"
 #import "AppDelegate.h"
 @import CoreLocation;
+//#import <CoreLocation/CoreLocation.h>
 
 @interface ViewController () <CLLocationManagerDelegate>
 
 @property (strong, nonatomic) CLLocationManager *locationManager;
 
+
 @end
 
 @implementation ViewController
+
+
+
+/// ASYNCHRONOUS REQUEST CODE ///
+
+-(void)makeRequest:(NSString*)string
+{
+//    NSLog(@"TEST");
+    //    NSString *latStr = [NSString stringWithFormat:@"%f",lat];
+    //    NSString *lonStr = [NSString stringWithFormat:@"%f", lon];
+    //    NSString *location = [latStr stringByAppendingString:[@"&lon=" stringByAppendingString:lonStr]];
+    //    [NSThread sleepForTimeInterval:5.0f];
+    NSString *location = string;
+    //     NSString *prefix = @"https://whispering-stream-9304.herokuapp.com/distance?lat=";
+    NSString *prefix = @"https://whispering-stream-9304.herokuapp.com/update?token=7e4cdfd5e12553d49e55e33e17ee8f760415583f46c758b2fb9360afcaf26c8d&lat=";
+    NSString *queryString = [prefix stringByAppendingString:location];
+    
+    
+    
+    //    7e4cdfd5e12553d49e55e33e17ee8f760415583f46c758b2fb9360afcaf26c8d
+    [NSURLConnection sendAsynchronousRequest:
+     [NSURLRequest requestWithURL:
+      [NSURL URLWithString:queryString]]
+                                       queue:[NSOperationQueue mainQueue]
+                           completionHandler: ^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+                               id foo = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                               NSLog(@"*********************This is what we want%@",foo[@"dist_in_feet"]);
+                               //    [self.myTextField setText:[NSString stringWithFormat:@"%@", foo[@"dist_in_feet"]]];
+                           }];
+  
+}
+
+
+//// LOCATION CODE /////
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations
+{
+//        NSLog(@"TEst");
+    //    NSLog(@"%@", [locations lastObject]);
+    //    BOOL locationOn = [CLLocationManager locationServicesEnabled];
+    //    locationManager update as location
+    locationManager = [[CLLocationManager alloc] init];
+    locationManager.delegate = self;
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    locationManager.distanceFilter = kCLDistanceFilterNone;
+    [locationManager startUpdatingLocation];
+    [locationManager stopUpdatingLocation];
+    
+    CLLocation *location = [locationManager location];
+    // Configure the new event with information from the location
+    NSLog(@"This is the location object %@", [location description]);
+    CLLocationCoordinate2D coordinate = [location coordinate];
+    
+    float longitude=coordinate.longitude;
+    float latitude=coordinate.latitude;
+    
+    
+    [self performSelector:@selector(makeRequest:) withObject: [NSString stringWithFormat:@"%f&lon=%f",latitude,longitude] afterDelay:1.0];
+    //
+//        [NSTimer scheduledTimerWithTimeInterval: 10.0
+//                                         target: self
+//                                       selector:@selector(makeRequest:)
+//                                       userInfo:[NSString stringWithFormat:@"%f.8&lon=%f.8",latitude,longitude]
+//                                        repeats:YES];
+    //
+}
+
 
 
 - (void)viewDidLoad {
@@ -49,7 +118,7 @@
         [[UIApplication sharedApplication] registerForRemoteNotificationTypes: UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert];
     }
     
-    
+  
     
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
@@ -78,14 +147,14 @@
 -(UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
 {
     MySupplementaryViewCollectionReusableView *header = nil;
-    
     if ([kind isEqual:UICollectionElementKindSectionHeader])
     {
         header = [collectionView dequeueReusableSupplementaryViewOfKind:kind
                                                     withReuseIdentifier:@"MyHeader"
                                                            forIndexPath:indexPath];
         
-  
+//        UIImage *headerImage = [UIImage imageNamed:@"background_image.jpg"];
+//        header.backgroundImage.image = headerImage;
         header.headerLabel.text = @"Bump";
     }
     return header;
@@ -138,61 +207,6 @@
 }
 
 
-/// ASYNCHRONOUS REQUEST CODE ///
-
--(void)makeRequest:(NSString*)string
-{
-    //    NSString *latStr = [NSString stringWithFormat:@"%f",lat];
-    //    NSString *lonStr = [NSString stringWithFormat:@"%f", lon];
-    //    NSString *location = [latStr stringByAppendingString:[@"&lon=" stringByAppendingString:lonStr]];
-    [NSThread sleepForTimeInterval:5.0f];
-     NSString *location = string;
-     NSString *prefix = @"https://whispering-stream-9304.herokuapp.com/distance?lat=";
-     NSString *queryString = [prefix stringByAppendingString:location];
-    [NSURLConnection sendAsynchronousRequest:
-      [NSURLRequest requestWithURL:
-      [NSURL URLWithString:queryString]]
-      queue:[NSOperationQueue mainQueue]
-      completionHandler: ^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-      id foo = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-      NSLog(@"*********************This is what we want%@",foo[@"dist_in_feet"]);
-    //    [self.myTextField setText:[NSString stringWithFormat:@"%@", foo[@"dist_in_feet"]]];
-      }];
-}
-
-
-//// LOCATION CODE /////
-
-- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations
-{
-    //    NSLog(@"%@", [locations lastObject]);
-    //    BOOL locationOn = [CLLocationManager locationServicesEnabled];
-    //    locationManager update as location
-    locationManager = [[CLLocationManager alloc] init];
-    locationManager.delegate = self;
-    locationManager.desiredAccuracy = kCLLocationAccuracyBest;
-    locationManager.distanceFilter = kCLDistanceFilterNone;
-    [locationManager startUpdatingLocation];
-    [locationManager stopUpdatingLocation];
-    
-    CLLocation *location = [locationManager location];
-    // Configure the new event with information from the location
-    NSLog(@"This is the location object %@", [location description]);
-    CLLocationCoordinate2D coordinate = [location coordinate];
-    
-    float longitude=coordinate.longitude;
-    float latitude=coordinate.latitude;
-    
-    
-    [self performSelector:@selector(makeRequest:) withObject: [NSString stringWithFormat:@"%f.8&lon=%f.8",latitude,longitude] afterDelay:1.0];
-    //
-    //    [NSTimer scheduledTimerWithTimeInterval: 10.0
-    //                                     target: self
-    //                                   selector:@selector(makeRequest:)
-    //                                   userInfo:[NSString stringWithFormat:@"%f.8&lon=%f.8",latitude,longitude]
-    //                                    repeats:YES];
-    //    
-}
 
 
 
